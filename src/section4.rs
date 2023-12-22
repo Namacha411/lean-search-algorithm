@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use rand::Rng;
 
 type ScoreType = i64;
@@ -11,7 +13,7 @@ const INF: ScoreType = 1_000_000_000;
 #[derive(Debug, Clone, Copy)]
 struct Coord {
     pub x: usize,
-    pub y: usize
+    pub y: usize,
 }
 
 impl Coord {
@@ -38,12 +40,18 @@ impl AutoMoveMazeState {
     fn new() -> AutoMoveMazeState {
         let mut rng = rand::thread_rng();
         let mut points = [[0; WIDTH]; HEIGHT];
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH {
-                points[y][x] = rng.gen_range(0..10);
+        for row in points.iter_mut() {
+            for point in row.iter_mut() {
+                *point = rng.gen_range(0..10);
             }
         }
-        AutoMoveMazeState { game_score: 0, evaluated_score: 0, points, turn: 0, characters: [Coord::new(); CHARACTER_N] }
+        AutoMoveMazeState {
+            game_score: 0,
+            evaluated_score: 0,
+            points,
+            turn: 0,
+            characters: [Coord::new(); CHARACTER_N],
+        }
     }
 
     fn init_characters(&mut self) {
@@ -71,7 +79,7 @@ impl AutoMoveMazeState {
     }
 
     fn get_score(&self, is_print: bool) -> ScoreType {
-        let mut state = self.clone();
+        let mut state = *self;
         for character in state.characters.iter() {
             let point = &mut state.points[character.y][character.x];
             *point = 0;
@@ -102,8 +110,14 @@ impl AutoMoveMazeState {
                 }
             }
         }
-        character.y = character.y.checked_add_signed(dy[best_action_index]).unwrap();
-        character.x = character.x.checked_add_signed(dx[best_action_index]).unwrap();
+        character.y = character
+            .y
+            .checked_add_signed(dy[best_action_index])
+            .unwrap();
+        character.x = character
+            .x
+            .checked_add_signed(dx[best_action_index])
+            .unwrap();
     }
 
     pub fn advance(&mut self) {
@@ -118,7 +132,6 @@ impl AutoMoveMazeState {
         self.turn += 1;
     }
 }
-
 
 impl std::fmt::Display for AutoMoveMazeState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -159,7 +172,7 @@ fn random_action(state: &mut AutoMoveMazeState) -> AutoMoveMazeState {
 }
 
 fn hill_climb(state: &AutoMoveMazeState, number: usize) -> AutoMoveMazeState {
-    let mut now_state = state.clone();
+    let mut now_state = *state;
     now_state.init_characters();
     let mut best_score = now_state.get_score(false);
     for _ in 0..number {
@@ -174,9 +187,14 @@ fn hill_climb(state: &AutoMoveMazeState, number: usize) -> AutoMoveMazeState {
     now_state
 }
 
-fn simulated_annealing(state: &AutoMoveMazeState, number: usize, start_temp: f64, end_tmp: f64) -> AutoMoveMazeState {
+fn simulated_annealing(
+    state: &AutoMoveMazeState,
+    number: usize,
+    start_temp: f64,
+    end_tmp: f64,
+) -> AutoMoveMazeState {
     let mut rng = rand::thread_rng();
-    let mut now_state = state.clone();
+    let mut now_state = *state;
     now_state.init_characters();
     let mut best_score = now_state.get_score(false);
     let mut now_score = best_score;
@@ -230,8 +248,8 @@ mod tests {
     fn test_hill_climb_action() {
         let mut mean = 0.0;
         for _ in 0..GAME_NUMBER {
-            let mut state = AutoMoveMazeState::new();
-            let state = hill_climb(&mut state, 10000);
+            let state = AutoMoveMazeState::new();
+            let state = hill_climb(&state, 10000);
             let score = state.get_score(false);
             mean += score as f64;
         }
@@ -243,14 +261,12 @@ mod tests {
     fn test_simulated_annealing_action() {
         let mut mean = 0.0;
         for _ in 0..GAME_NUMBER {
-            let mut state = AutoMoveMazeState::new();
-            let state = simulated_annealing(&mut state, 10000, 500.0, 10.0);
+            let state = AutoMoveMazeState::new();
+            let state = simulated_annealing(&state, 10000, 500.0, 10.0);
             let score = state.get_score(false);
             mean += score as f64;
         }
         mean /= GAME_NUMBER as f64;
         println!("Score of Simulated Annealing Action: {}", mean);
     }
-
-
 }

@@ -1,4 +1,10 @@
-use std::{char, collections::BinaryHeap, time::{Instant, Duration}};
+#![allow(unused)]
+
+use std::{
+    char,
+    collections::BinaryHeap,
+    time::{Duration, Instant},
+};
 
 use rand::Rng;
 
@@ -13,7 +19,7 @@ const INF: ScoreType = 1_000_000_000;
 #[derive(Debug, Clone, Copy)]
 struct Coord {
     pub x: usize,
-    pub y: usize
+    pub y: usize,
 }
 
 impl Coord {
@@ -52,7 +58,14 @@ impl MazeState {
                 *point = rng.gen_range(0..10);
             }
         }
-        MazeState { character, game_score: 0, evaluated_score: 0, first_action: None, points, turn: 0 }
+        MazeState {
+            character,
+            game_score: 0,
+            evaluated_score: 0,
+            first_action: None,
+            points,
+            turn: 0,
+        }
     }
 
     pub fn is_done(&self) -> bool {
@@ -77,8 +90,16 @@ impl MazeState {
         let dy = [0, 0, 1, -1];
         let mut actions = vec![];
         for act in 0..4 {
-            let ty = self.character.y.checked_add_signed(dy[act]).unwrap_or(HEIGHT);
-            let tx = self.character.x.checked_add_signed(dx[act]).unwrap_or(WIDTH);
+            let ty = self
+                .character
+                .y
+                .checked_add_signed(dy[act])
+                .unwrap_or(HEIGHT);
+            let tx = self
+                .character
+                .x
+                .checked_add_signed(dx[act])
+                .unwrap_or(WIDTH);
             if ty < HEIGHT && tx < WIDTH {
                 actions.push(act);
             }
@@ -139,7 +160,10 @@ struct TimeKeeper {
 
 impl TimeKeeper {
     pub fn new(time_threshold: u64) -> TimeKeeper {
-        TimeKeeper { start_time: Instant::now(), time_threshold }
+        TimeKeeper {
+            start_time: Instant::now(),
+            time_threshold,
+        }
     }
 
     pub fn is_time_over(&self) -> bool {
@@ -201,7 +225,11 @@ fn beam_search_action(state: &MazeState, beam_width: usize, beam_depth: u64) -> 
     best_state.first_action.unwrap()
 }
 
-fn beam_search_with_time_threshold_action(state: &MazeState, beam_width: usize, time_threshold: u64) -> Action {
+fn beam_search_with_time_threshold_action(
+    state: &MazeState,
+    beam_width: usize,
+    time_threshold: u64,
+) -> Action {
     let time_keeper = TimeKeeper::new(time_threshold);
     let mut now_beam = BinaryHeap::new();
     let mut best_state = MazeState::new();
@@ -236,9 +264,14 @@ fn beam_search_with_time_threshold_action(state: &MazeState, beam_width: usize, 
     best_state.first_action.unwrap()
 }
 
-fn chokudai_search_action(state: &MazeState, beam_width: usize, beam_depth: usize, beam_number: usize) -> Option<Action> {
+fn chokudai_search_action(
+    state: &MazeState,
+    beam_width: usize,
+    beam_depth: usize,
+    beam_number: usize,
+) -> Option<Action> {
     let mut beam = vec![BinaryHeap::new(); beam_depth + 1];
-    beam[0].push(state.clone());
+    beam[0].push(*state);
     for _ in 0..beam_number {
         for t in 0..beam_depth {
             for _ in 0..beam_width {
@@ -273,10 +306,15 @@ fn chokudai_search_action(state: &MazeState, beam_width: usize, beam_depth: usiz
     None
 }
 
-fn chokudai_search_with_time_threshold_action(state: &MazeState, beam_width: usize, beam_depth: usize, time_threshold: u64) -> Option<Action> {
+fn chokudai_search_with_time_threshold_action(
+    state: &MazeState,
+    beam_width: usize,
+    beam_depth: usize,
+    time_threshold: u64,
+) -> Option<Action> {
     let time_keeper = TimeKeeper::new(time_threshold);
     let mut beam = vec![BinaryHeap::new(); beam_depth + 1];
-    beam[0].push(state.clone());
+    beam[0].push(*state);
     loop {
         for t in 0..beam_depth {
             for _ in 0..beam_width {
@@ -314,12 +352,13 @@ fn chokudai_search_with_time_threshold_action(state: &MazeState, beam_width: usi
     None
 }
 
-
 pub fn play_game() {
     let mut state = MazeState::new();
     println!("{}", state);
     while !state.is_done() {
-        state.advance(chokudai_search_with_time_threshold_action(&state, 5, END_TURN as usize, 10).unwrap());
+        state.advance(
+            chokudai_search_with_time_threshold_action(&state, 5, END_TURN as usize, 10).unwrap(),
+        );
     }
     println!("{}", state)
 }
@@ -405,7 +444,10 @@ mod test {
         for _ in 0..GAME_NUMBER {
             let mut state = MazeState::new();
             while !state.is_done() {
-                state.advance(chokudai_search_with_time_threshold_action(&state, 5, END_TURN as usize, 1).unwrap())
+                state.advance(
+                    chokudai_search_with_time_threshold_action(&state, 5, END_TURN as usize, 1)
+                        .unwrap(),
+                )
             }
             mean += state.game_score as f64;
         }
@@ -420,12 +462,14 @@ mod test {
         for _ in 0..GAME_NUMBER {
             let mut state = MazeState::new();
             while !state.is_done() {
-                state.advance(chokudai_search_with_time_threshold_action(&state, 5, END_TURN as usize, 10).unwrap())
+                state.advance(
+                    chokudai_search_with_time_threshold_action(&state, 5, END_TURN as usize, 10)
+                        .unwrap(),
+                )
             }
             mean += state.game_score as f64;
         }
         mean /= GAME_NUMBER as f64;
         println!("Beam Search 10ms Score:\t{}", mean)
     }
-
 }
