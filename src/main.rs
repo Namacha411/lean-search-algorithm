@@ -1,5 +1,7 @@
 pub mod section3;
-use section3::play_game;
+pub mod section4;
+
+use section4::play_game;
 
 fn main() {
     play_game();
